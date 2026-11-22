@@ -11,26 +11,53 @@ const execFileP = promisify(execFile);
 const HOME = os.homedir();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, 'public');
-const BACKUPS = path.join(HOME, '.skill-manager', 'backups');
+const DATA_DIR = path.join(HOME, '.skill-manager');
+const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
+const BACKUPS = path.join(DATA_DIR, 'backups');
 const PORT = Number(process.env.PORT || 4780);
 const TAR = process.platform === 'win32'
   ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe')
   : 'tar';
 
-const SOURCES = {
-  codex: {
-    label: 'Codex',
-    root: path.join(HOME, '.codex', 'skills'),
-    disabled: path.join(HOME, '.codex', 'skills-disabled'),
-  },
-  workbuddy: {
-    label: 'WorkBuddy',
-    root: path.join(HOME, '.workbuddy-ai', 'skills'),
-    disabled: path.join(HOME, '.workbuddy-ai', 'skills-disabled'),
-  },
-};
-
 const NAME_RE = /^[A-Za-z0-9._-]+$/;
+
+function defaultConfig() {
+  const wb = path.join(HOME, '.workbuddy-ai', 'skills');
+  return {
+    lang: 'zh-CN',
+    sources: [
+      { id: 'codex', kind: 'codex', path: path.join(HOME, '.codex', 'skills') },
+      { id: 'workbuddy-cn', kind: 'workbuddy', path: wb },
+      { id: 'workbuddy-intl', kind: 'workbuddy', path: wb },
+    ],
+  };
+}
+
+async function loadConfig() {
+  try {
+    const cfg = JSON.parse(await fsp.readFile(CONFIG_PATH, 'utf8'));
+    if (!Array.isArray(cfg.sources) || !cfg.sources.length) return defaultConfig();
+    cfg.sources = cfg.sources.filter((s) => s && typeof s.id === 'string' && typeof s.path === 'string');
+    return cfg.sources.length ? cfg : defaultConfig();
+  } catch {
+    return defaultConfig();
+  }
+}
+
+async function saveConfig(cfg) {
+  await ensureDir(DATA_DIR);
+  await fsp.writeFile(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+}
+
+function disabledPathFor(root) {
+  return path.join(path.dirname(root), path.basename(root) + '-disabled');
+}
+
+function resolveSource(cfg, id) {
+  const s = cfg.sources.find((x) => x.id === id);
+  if (!s) throw new Error('未知来源');
+  return { ...s, root: s.path, disabled: disabledPathFor(s.path) };
+}
 
 function assertName(name) {
   if (!name || !NAME_RE.test(name) || name === '.' || name === '..') {
@@ -122,13 +149,11 @@ async function readSkill(dir, state) {
     hasYaml: yaml.hasYaml,
     allowImplicit: yaml.allowImplicit,
     source,
-    mtime: Math.max(...files.map((f) => f.mtime), 0),
+    mtime: Math.max(0, ...files.map((f) => f.mtime)),
   };
 }
 
-async function listSkills(sourceKey) {
-  const src = SOURCES[sourceKey];
-  if (!src) throw new Error('未知来源');
+async function listSkills(src) {
   const out = [];
   for (const [dir, state] of [[src.root, 'enabled'], [src.disabled, 'disabled']]) {
     if (!(await exists(dir))) continue;
@@ -143,8 +168,7 @@ async function listSkills(sourceKey) {
   return out;
 }
 
-function findSkillDir(sourceKey, name, state = 'enabled') {
-  const src = SOURCES[sourceKey];
+function findSkillDir(src, name, state = 'enabled') {
   const root = state === 'disabled' ? src.disabled : src.root;
   const dir = path.join(root, name);
   if (!inside(root, dir)) throw new Error('路径越界');
@@ -223,7 +247,9 @@ async function discoverSkills(repoRoot) {
   const skillsDir = path.join(repoRoot, 'skills');
   if (await exists(skillsDir)) {
     for (const e of await fsp.readdir(skillsDir, { withFileTypes: true })) {
-      if (e.isDirectory() && (await exists(path.join(skillsDir, e.name, 'SKILL.md')))) found.push({ name: e.name, dir: path.join(skillsDir, e.name) });
+      if (e.isDirectory() && (await exists(path.join(skillsDir, e.name, 'SKILL.md')))) {
+        found.push({ name: e.name, dir: path.join(skillsDir, e.name) });
+      }
     }
   }
   if (await exists(path.join(repoRoot, 'SKILL.md'))) {
@@ -232,8 +258,7 @@ async function discoverSkills(repoRoot) {
   return found;
 }
 
-async function installSkill(sourceKey, repo, skillName) {
-  const src = SOURCES[sourceKey];
+async function installSkill(src, repo, skillName) {
   const { tmp, repoRoot, repo: clean } = await fetchRepoZip(repo);
   try {
     const skills = await discoverSkills(repoRoot);
@@ -255,9 +280,9 @@ async function installSkill(sourceKey, repo, skillName) {
   }
 }
 
-async function updateSkill(sourceKey, name) {
+async function updateSkill(src, name) {
   assertName(name);
-  const dir = findSkillDir(sourceKey, name, 'enabled');
+  const dir = findSkillDir(src, name, 'enabled');
   if (!(await exists(dir))) throw new Error('技能不存在或已禁用');
   const srcFile = path.join(dir, '.skill-source.json');
   if (!(await exists(srcFile))) throw new Error('缺少来源记录（.skill-source.json），无法自动更新');
@@ -277,9 +302,8 @@ async function updateSkill(sourceKey, name) {
   }
 }
 
-async function createSkill(sourceKey, name, description) {
+async function createSkill(src, name, description) {
   assertName(name);
-  const src = SOURCES[sourceKey];
   const dir = path.join(src.root, name);
   if (await exists(dir)) throw new Error('同名技能已存在');
   await ensureDir(dir);
@@ -288,8 +312,8 @@ async function createSkill(sourceKey, name, description) {
   return { ok: true, dir };
 }
 
-async function readSkillDetail(sourceKey, name, state) {
-  const dir = findSkillDir(sourceKey, name, state);
+async function readSkillDetail(src, name, state) {
+  const dir = findSkillDir(src, name, state);
   if (!(await exists(dir))) throw new Error('技能不存在');
   const text = await fsp.readFile(path.join(dir, 'SKILL.md'), 'utf8');
   const files = await walk(dir);
@@ -315,42 +339,73 @@ async function readBody(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
 
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
     const p = url.pathname;
+    const cfg = await loadConfig();
 
     if (p === '/api/sources') {
-      const data = {};
-      for (const [k, v] of Object.entries(SOURCES)) {
-        data[k] = { label: v.label, root: v.root, exists: await exists(v.root), disabledExists: await exists(v.disabled) };
-      }
-      return send(res, 200, data);
+      const out = cfg.sources.map((s) => ({
+        id: s.id,
+        kind: s.kind,
+        path: s.path,
+        exists: fs.existsSync(s.path),
+        sharedWith: cfg.sources.filter((x) => x.id !== s.id && path.resolve(x.path) === path.resolve(s.path)).map((x) => x.id),
+      }));
+      return send(res, 200, { sources: out, lang: cfg.lang || 'zh-CN' });
+    }
+
+    if (p === '/api/config' && req.method === 'GET') {
+      return send(res, 200, cfg);
     }
 
     if (p === '/api/skills') {
-      const source = url.searchParams.get('source') || 'codex';
-      return send(res, 200, { skills: await listSkills(source) });
+      const id = url.searchParams.get('source') || 'codex';
+      return send(res, 200, { skills: await listSkills(resolveSource(cfg, id)) });
     }
 
     if (p === '/api/skill') {
-      const source = url.searchParams.get('source') || 'codex';
+      const id = url.searchParams.get('source') || 'codex';
       const name = url.searchParams.get('name') || '';
       const state = url.searchParams.get('state') === 'disabled' ? 'disabled' : 'enabled';
       assertName(name);
-      return send(res, 200, await readSkillDetail(source, name, state));
+      return send(res, 200, await readSkillDetail(resolveSource(cfg, id), name, state));
     }
 
     if (req.method === 'POST') {
       const body = await readBody(req);
 
+      if (p === '/api/config') {
+        const next = { ...cfg };
+        if (Array.isArray(body.sources)) {
+          for (const patch of body.sources) {
+            const target = next.sources.find((s) => s.id === patch.id);
+            if (!target) continue;
+            if (typeof patch.path === 'string' && patch.path.trim()) {
+              if (!path.isAbsolute(patch.path.trim())) throw new Error('路径必须是绝对路径');
+              target.path = path.normalize(patch.path.trim());
+            }
+          }
+        }
+        if (typeof body.lang === 'string' && ['zh-CN', 'en'].includes(body.lang)) next.lang = body.lang;
+        await saveConfig(next);
+        return send(res, 200, { ok: true, config: next });
+      }
+
       if (p === '/api/toggle') {
         const { source, name, enabled } = body;
         assertName(name);
-        const src = SOURCES[source];
-        if (!src) throw new Error('未知来源');
+        const src = resolveSource(cfg, source);
         const from = path.join(enabled ? src.disabled : src.root, name);
         const to = path.join(enabled ? src.root : src.disabled, name);
         if (!(await exists(from))) throw new Error('源目录不存在，可能状态已变化');
@@ -362,15 +417,16 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/implicit') {
         const { source, name, allow } = body;
         assertName(name);
-        const dir = findSkillDir(source, name, 'enabled');
-        const file = await setYamlFlag(dir, !!allow);
+        const src = resolveSource(cfg, source);
+        const file = await setYamlFlag(findSkillDir(src, name, 'enabled'), !!allow);
         return send(res, 200, { ok: true, file });
       }
 
       if (p === '/api/uninstall') {
         const { source, name } = body;
         assertName(name);
-        const dir = findSkillDir(source, name, 'enabled');
+        const src = resolveSource(cfg, source);
+        const dir = findSkillDir(src, name, 'enabled');
         if (!(await exists(dir))) throw new Error('技能不存在');
         const backup = await backupDir(dir, `uninstall-${name}`);
         await fsp.rm(dir, { recursive: true, force: true });
@@ -379,17 +435,17 @@ const server = http.createServer(async (req, res) => {
 
       if (p === '/api/install') {
         const { source, repo, skill } = body;
-        return send(res, 200, await installSkill(source, repo, skill));
+        return send(res, 200, await installSkill(resolveSource(cfg, source), repo, skill));
       }
 
       if (p === '/api/update') {
         const { source, name } = body;
-        return send(res, 200, await updateSkill(source, name));
+        return send(res, 200, await updateSkill(resolveSource(cfg, source), name));
       }
 
       if (p === '/api/create') {
         const { source, name, description } = body;
-        return send(res, 200, await createSkill(source, name, description));
+        return send(res, 200, await createSkill(resolveSource(cfg, source), name, description));
       }
     }
 
@@ -405,5 +461,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Skill Manager running at http://127.0.0.1:${PORT}`);
+  console.log(`config: ${CONFIG_PATH}`);
   console.log(`backups: ${BACKUPS}`);
 });

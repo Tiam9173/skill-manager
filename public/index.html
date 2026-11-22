@@ -21,22 +21,24 @@
   input{font:inherit}
   ::selection{background:#ededed;color:#0a0a0a}
 
-  .top{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,10,10,.86);backdrop-filter:blur(8px);z-index:10}
-  .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:-.3px}
+  .top{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,10,10,.86);backdrop-filter:blur(8px);z-index:10;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:-.3px;white-space:nowrap}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(80,227,194,.12)}
   .tabs{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r6);padding:2px}
-  .tab{padding:4px 12px;border-radius:4px;font-size:13px;color:var(--body)}
+  .tab{padding:4px 10px;border-radius:4px;font-size:12.5px;color:var(--body);white-space:nowrap}
   .tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
-  .search{flex:1;max-width:320px;margin-left:auto}
+  .tab:disabled{opacity:.4;cursor:not-allowed}
+  .search{flex:1;min-width:150px;max-width:300px;margin-left:auto}
   .search input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:var(--r6);padding:6px 10px;color:var(--ink);outline:none;font-size:13px}
   .search input:focus{border-color:var(--line2)}
-  .btn{border:1px solid var(--line2);border-radius:var(--r6);padding:6px 12px;font-size:13px;font-weight:500;background:var(--panel);transition:background .12s,border-color .12s}
+  .btn{border:1px solid var(--line2);border-radius:var(--r6);padding:6px 12px;font-size:13px;font-weight:500;background:var(--panel);transition:background .12s,border-color .12s;white-space:nowrap}
   .btn:hover{background:var(--panel2);border-color:#555}
   .btn.primary{background:var(--ink);color:#0a0a0a;border-color:var(--ink)}
   .btn.primary:hover{background:#fff}
   .btn.danger{color:var(--err);border-color:#4a2020}
   .btn.danger:hover{background:#1d0f0f;border-color:#6b2b2b}
   .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.icon{padding:6px 9px;font:12px/1 var(--mono)}
 
   .wrap{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 57px)}
   .list{border-right:1px solid var(--line);overflow:auto;padding:8px}
@@ -50,11 +52,9 @@
   .pill{font:10.5px/1 var(--mono);padding:3px 6px;border-radius:999px;border:1px solid var(--line2);color:var(--body);text-transform:uppercase;letter-spacing:.04em}
   .pill.off{color:var(--warn);border-color:#4a3a17}
   .pill.dis{color:var(--mute)}
-  .pill.on{color:var(--ok);border-color:#1e4d44}
 
   .detail{overflow:auto;padding:24px 28px}
-  .empty{height:100%;display:grid;place-items:center;color:var(--mute);font-size:13px}
-  .dhead{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .empty{height:100%;display:grid;place-items:center;color:var(--mute);font-size:13px;text-align:center;padding:24px}
   .dtitle{font-size:20px;font-weight:600;letter-spacing:-.6px;line-height:28px}
   .dpath{font:12px/1.6 var(--mono);color:var(--mute);margin-top:4px;word-break:break-all}
   .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
@@ -65,57 +65,144 @@
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 20px}
   .sect{font:11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:24px 0 10px}
   pre.md{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r8);padding:16px;overflow:auto;max-height:52vh;font:12.5px/1.65 var(--mono);color:#c9c9c9;white-space:pre-wrap;word-break:break-word}
-  .files{display:grid;grid-template-columns:1fr auto;max-width:720px;gap:2px 16px;font:12px/1.9 var(--mono);color:var(--body)}
+  .files{display:grid;grid-template-columns:1fr auto;gap:2px 16px;font:12px/1.9 var(--mono);color:var(--body);max-width:720px}
   .files .sz{color:var(--mute);text-align:right}
 
   .mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
   .mask[data-open="true"]{display:grid}
-  .modal{width:min(520px,92vw);background:var(--panel);border:1px solid var(--line2);border-radius:var(--r12);padding:20px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+  .modal{width:min(560px,92vw);background:var(--panel);border:1px solid var(--line2);border-radius:var(--r12);padding:20px;box-shadow:0 24px 64px rgba(0,0,0,.6);max-height:86vh;overflow:auto}
   .modal h3{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:-.3px}
   .modal p{margin:0 0 16px;color:var(--mute);font-size:12.5px}
   .field{margin-bottom:12px}
   .field label{display:block;font:11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
   .field input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--r6);padding:8px 10px;color:var(--ink);outline:none;font-size:13px}
   .field input:focus{border-color:var(--line2)}
+  .field .hint{font:11px/1.5 var(--mono);color:#5c5c5c;margin-top:5px;word-break:break-all}
   .modal .row{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:var(--panel2);border:1px solid var(--line2);border-radius:var(--r8);padding:10px 14px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;max-width:80vw;z-index:60}
   .toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.err{border-color:#5a2020;color:#ffb4b4}
   .toast.ok{border-color:#1e4d44;color:#9df3e2}
-  @media (max-width:820px){.wrap{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line);max-height:40vh}}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line);max-height:38vh}}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="brand"><span class="dot"></span>Skill Manager</div>
   <div class="tabs" id="tabs" role="tablist"></div>
-  <div class="search"><input id="q" placeholder="搜索名称或描述" autocomplete="off" /></div>
-  <button class="btn" id="btnInstall">安装</button>
-  <button class="btn primary" id="btnCreate">新建</button>
+  <div class="search"><input id="q" autocomplete="off" /></div>
+  <button class="btn icon" id="btnLang" title="Language">EN</button>
+  <button class="btn" id="btnSettings"></button>
+  <button class="btn" id="btnInstall"></button>
+  <button class="btn primary" id="btnCreate"></button>
 </div>
 
 <div class="wrap">
   <div class="list" id="list"></div>
-  <div class="detail" id="detail"><div class="empty">选择左侧技能查看详情</div></div>
+  <div class="detail" id="detail"><div class="empty" data-i18n="emptySelect"></div></div>
 </div>
 
 <div class="mask" id="mask"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-const state = { source: 'codex', skills: [], current: null, q: '' };
+const I18N = {
+  'zh-CN': {
+    search: '搜索名称或描述',
+    install: '安装', create: '新建', settings: '设置',
+    srcCodex: 'Codex', srcCn: 'WorkBuddy 中国版', srcIntl: 'WorkBuddy 国际版', srcShared: 'WorkBuddy 中国版 / 国际版共用',
+    emptySelect: '选择左侧技能查看详情',
+    emptyList: '这个来源下还没有技能',
+    noMatch: '没有匹配项',
+    noDesc: '无描述',
+    filesUnit: '{n} 个文件',
+    enabled: '已启用', disabled: '已禁用', manual: '仅手动',
+    enable: '启用', disable: '禁用',
+    makeManual: '改为仅手动', allowAuto: '允许自动调用',
+    update: '更新', uninstall: '卸载',
+    implicitDefault: '无 openai.yaml · 默认允许自动',
+    implicitOn: '允许自动调用', implicitOff: '仅手动调用',
+    files: '文件', noSource: '缺少来源记录，无法自动更新',
+    confirmUpdate: '从 {repo} 重新拉取并覆盖「{name}」？旧版本会先备份。',
+    confirmUninstall: '卸载「{name}」？目录会移到备份区，可手动恢复。',
+    okDisabled: '已禁用（目录移入 disabled）', okEnabled: '已启用',
+    okManual: '已改为仅手动调用', okAuto: '已允许自动调用',
+    okUpdated: '已更新，备份：{path}', okUninstalled: '已卸载，备份：{path}',
+    uninstalled: '已卸载',
+    installTitle: '从 GitHub 安装', installDesc: '仓库格式 owner/repo。若仓库含多个技能，先留空以获取列表。',
+    repo: 'Repository', skillOptional: '技能名（可选）',
+    needsSelection: '该仓库包含多个技能：{list}，请填一个再装',
+    fillRepo: '请填写仓库',
+    createTitle: '新建技能', createDesc: '会生成 SKILL.md 模板，写入当前来源目录。',
+    name: '名称', desc: '描述',
+    fillName: '请填写名称',
+    okCreated: '已创建 {name}',
+    settingsTitle: '来源设置', settingsDesc: '国际版与中国版若为独立安装，请分别指定技能目录；指向同一目录时会合并显示。',
+    save: '保存', cancel: '取消',
+    okSaved: '设置已保存',
+    installed: '已安装 {name}',
+  },
+  en: {
+    search: 'Search name or description',
+    install: 'Install', create: 'New', settings: 'Settings',
+    srcCodex: 'Codex', srcCn: 'WorkBuddy China', srcIntl: 'WorkBuddy International', srcShared: 'WorkBuddy China / International (shared)',
+    emptySelect: 'Select a skill to see details',
+    emptyList: 'No skills in this source',
+    noMatch: 'No matches',
+    noDesc: 'No description',
+    filesUnit: '{n} files',
+    enabled: 'Enabled', disabled: 'Disabled', manual: 'Manual',
+    enable: 'Enable', disable: 'Disable',
+    makeManual: 'Make manual-only', allowAuto: 'Allow auto-invoke',
+    update: 'Update', uninstall: 'Uninstall',
+    implicitDefault: 'No openai.yaml · auto allowed by default',
+    implicitOn: 'Auto-invoke allowed', implicitOff: 'Manual only',
+    files: 'Files', noSource: 'No source record, cannot auto-update',
+    confirmUpdate: 'Re-fetch from {repo} and overwrite "{name}"? The old version is backed up first.',
+    confirmUninstall: 'Uninstall "{name}"? The folder moves to backups and can be restored.',
+    okDisabled: 'Disabled (moved to disabled dir)', okEnabled: 'Enabled',
+    okManual: 'Set to manual-only', okAuto: 'Auto-invoke allowed',
+    okUpdated: 'Updated, backup: {path}', okUninstalled: 'Uninstalled, backup: {path}',
+    uninstalled: 'Uninstalled',
+    installTitle: 'Install from GitHub', installDesc: 'Format owner/repo. Leave skill empty to list skills when the repo has several.',
+    repo: 'Repository', skillOptional: 'Skill (optional)',
+    needsSelection: 'This repo has multiple skills: {list}. Fill one in and retry.',
+    fillRepo: 'Repository is required',
+    createTitle: 'New skill', createDesc: 'Creates a SKILL.md template in the active source.',
+    name: 'Name', desc: 'Description',
+    fillName: 'Name is required',
+    okCreated: 'Created {name}',
+    settingsTitle: 'Source settings', settingsDesc: 'If China and International builds are installed separately, set their skill folders here. Identical paths are merged.',
+    save: 'Save', cancel: 'Cancel',
+    okSaved: 'Settings saved',
+    installed: 'Installed {name}',
+  },
+};
+
+const params0 = new URLSearchParams(location.search);
+let lang = localStorage.getItem('sm-lang') || params0.get('lang') || ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh-CN' : 'en');
+if (!I18N[lang]) lang = 'en';
+
+const t = (k, vars) => {
+  let s = I18N[lang][k] ?? k;
+  if (vars) for (const [a, b] of Object.entries(vars)) s = s.split('{' + a + '}').join(b);
+  return s;
+};
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const filesLabel = (n) => lang === 'zh-CN' ? `${n} 个文件` : `${n} ${n === 1 ? 'file' : 'files'}`;
 const fmt = (n) => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
 
+const state = { sources: [], tabs: [], active: null, skills: [], current: null, q: '' };
+
 function toast(msg, kind = '') {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.className = 'toast ' + kind;
-  t.dataset.show = 'true';
-  clearTimeout(t._h);
-  t._h = setTimeout(() => (t.dataset.show = 'false'), 3200);
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = 'toast ' + kind;
+  el.dataset.show = 'true';
+  clearTimeout(el._h);
+  el._h = setTimeout(() => (el.dataset.show = 'false'), 3600);
 }
 
 async function api(url, body) {
@@ -125,23 +212,56 @@ async function api(url, body) {
   return data;
 }
 
+function labelFor(tab) {
+  if (tab.kind === 'codex') return t('srcCodex');
+  if (tab.shared) return t('srcShared');
+  return tab.id === 'workbuddy-cn' ? t('srcCn') : t('srcIntl');
+}
+
+function buildTabs(sources) {
+  const tabs = [];
+  const byPath = new Map();
+  for (const s of sources) {
+    if (s.kind === 'workbuddy') {
+      const key = s.path.toLowerCase();
+      if (byPath.has(key)) { byPath.get(key).shared = true; continue; }
+      const tab = { id: s.id, kind: s.kind, path: s.path, exists: s.exists, shared: false };
+      byPath.set(key, tab);
+      tabs.push(tab);
+    } else {
+      tabs.push({ id: s.id, kind: s.kind, path: s.path, exists: s.exists, shared: false });
+    }
+  }
+  return tabs;
+}
+
 async function loadSources() {
   const data = await api('/api/sources');
-  $('#tabs').innerHTML = Object.entries(data).map(([k, v]) =>
-    `<button class="tab" role="tab" data-src="${k}" aria-selected="${k === state.source}">${esc(v.label)}${v.exists ? '' : ' · 无目录'}</button>`
+  state.sources = data.sources;
+  state.tabs = buildTabs(data.sources);
+  if (!state.tabs.find((x) => x.id === state.active)) state.active = state.tabs[0] ? state.tabs[0].id : null;
+  renderTabs();
+}
+
+function renderTabs() {
+  $('#tabs').innerHTML = state.tabs.map((tb) =>
+    `<button class="tab" role="tab" data-id="${tb.id}" aria-selected="${tb.id === state.active}" ${tb.exists ? '' : 'disabled title="' + esc(tb.path) + '"'}>${esc(labelFor(tb))}</button>`
   ).join('');
-  $('#tabs').querySelectorAll('.tab').forEach((b) => b.onclick = () => {
-    state.source = b.dataset.src; state.current = null;
-    $('#tabs').querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-    loadSkills();
+  $('#tabs').querySelectorAll('.tab').forEach((b) => {
+    b.onclick = () => { state.active = b.dataset.id; state.current = null; renderTabs(); loadSkills(); };
   });
 }
 
 async function loadSkills() {
-  const { skills } = await api('/api/skills?source=' + state.source);
+  if (!state.active) {
+    $('#list').innerHTML = '';
+    $('#detail').innerHTML = `<div class="empty">${esc(t('emptyList'))}</div>`;
+    return;
+  }
+  const { skills } = await api('/api/skills?source=' + encodeURIComponent(state.active));
   state.skills = skills;
   renderList();
-  if (!skills.length) $('#detail').innerHTML = '<div class="empty">这个来源下还没有技能</div>';
+  if (!skills.length) $('#detail').innerHTML = `<div class="empty">${esc(t('emptyList'))}</div>`;
 }
 
 function renderList() {
@@ -150,12 +270,12 @@ function renderList() {
   $('#list').innerHTML = items.map((s) => `
     <button class="item" data-name="${esc(s.name)}" data-state="${s.state}" aria-current="${state.current === s.name}">
       <div class="name">${esc(s.name)}
-        ${s.state === 'disabled' ? '<span class="pill dis">disabled</span>' : ''}
-        ${s.state === 'enabled' && !s.allowImplicit ? '<span class="pill off">手动</span>' : ''}
+        ${s.state === 'disabled' ? `<span class="pill dis">${esc(t('disabled'))}</span>` : ''}
+        ${s.state === 'enabled' && !s.allowImplicit ? `<span class="pill off">${esc(t('manual'))}</span>` : ''}
       </div>
-      <div class="desc">${esc(s.description || '无描述')}</div>
-      <div class="meta"><span>${s.fileCount} files</span><span>${fmt(s.bytes)}</span>${s.source ? '<span>git</span>' : ''}</div>
-    </button>`).join('') || '<div class="empty" style="height:auto;padding:24px">没有匹配项</div>';
+      <div class="desc">${esc(s.description || t('noDesc'))}</div>
+      <div class="meta"><span>${esc(filesLabel(s.fileCount))}</span><span>${fmt(s.bytes)}</span>${s.source ? '<span>git</span>' : ''}</div>
+    </button>`).join('') || `<div class="empty" style="height:auto;padding:24px">${esc(t('noMatch'))}</div>`;
   $('#list').querySelectorAll('.item').forEach((b) => b.onclick = () => selectSkill(b.dataset.name, b.dataset.state));
 }
 
@@ -164,30 +284,26 @@ async function selectSkill(name, st) {
   renderList();
   const cur = document.querySelector('.item[aria-current="true"]');
   if (cur) cur.scrollIntoView({ block: 'nearest' });
-  const d = await api(`/api/skill?source=${state.source}&name=${encodeURIComponent(name)}&state=${st}`);
+  const d = await api(`/api/skill?source=${encodeURIComponent(state.active)}&name=${encodeURIComponent(name)}&state=${st}`);
   const s = state.skills.find((x) => x.name === name) || {};
-  const implicitLabel = s.hasYaml ? (s.allowImplicit ? 'allow_implicit_invocation: true' : 'allow_implicit_invocation: false') : '无 openai.yaml · 默认允许自动';
+  const implicitLabel = s.hasYaml ? (s.allowImplicit ? t('implicitOn') : t('implicitOff')) : t('implicitDefault');
   $('#detail').innerHTML = `
-    <div class="dhead">
-      <div style="flex:1;min-width:240px">
-        <div class="dtitle">${esc(name)}</div>
-        <div class="dpath">${esc(d.dir)}</div>
-      </div>
-    </div>
+    <div class="dtitle">${esc(name)}</div>
+    <div class="dpath">${esc(d.dir)}</div>
     <div class="chips">
-      <span class="chip ${d.state === 'enabled' ? 'ok' : 'dis'}">${d.state === 'enabled' ? '已启用' : '已禁用'}</span>
-      <span class="chip">${s.fileCount || 0} 个文件</span>
+      <span class="chip ${d.state === 'enabled' ? 'ok' : 'dis'}">${esc(d.state === 'enabled' ? t('enabled') : t('disabled'))}</span>
+      <span class="chip">${esc(filesLabel(s.fileCount || 0))}</span>
       <span class="chip">${fmt(s.bytes || 0)}</span>
       <span class="chip ${s.allowImplicit ? 'warn' : 'ok'}">${esc(implicitLabel)}</span>
       ${s.source ? `<span class="chip">${esc(s.source.repo)}</span>` : ''}
     </div>
     <div class="actions">
-      <button class="btn" id="aToggle">${d.state === 'enabled' ? '禁用' : '启用'}</button>
-      <button class="btn" id="aImplicit" ${d.state === 'enabled' ? '' : 'disabled'}>${s.allowImplicit ? '改为仅手动' : '允许自动调用'}</button>
-      <button class="btn" id="aUpdate" ${s.source ? '' : 'disabled title="缺少 .skill-source.json，无法自动更新"'}>更新</button>
-      <button class="btn danger" id="aUninstall">卸载</button>
+      <button class="btn" id="aToggle">${esc(d.state === 'enabled' ? t('disable') : t('enable'))}</button>
+      <button class="btn" id="aImplicit" ${d.state === 'enabled' ? '' : 'disabled'}>${esc(s.allowImplicit ? t('makeManual') : t('allowAuto'))}</button>
+      <button class="btn" id="aUpdate" ${s.source ? '' : `disabled title="${esc(t('noSource'))}"`}>${esc(t('update'))}</button>
+      <button class="btn danger" id="aUninstall">${esc(t('uninstall'))}</button>
     </div>
-    <div class="sect">Files</div>
+    <div class="sect">${esc(t('files'))}</div>
     <div class="files">${d.files.map((f) => `<span>${esc(f.rel)}</span><span class="sz">${fmt(f.size)}</span>`).join('')}</div>
     <div class="sect">SKILL.md</div>
     <pre class="md">${esc(d.skillMd)}</pre>`;
@@ -195,88 +311,150 @@ async function selectSkill(name, st) {
   $('#aToggle').onclick = async () => {
     const enable = d.state !== 'enabled';
     try {
-      await api('/api/toggle', { source: state.source, name, enabled: enable });
-      toast(enable ? '已启用' : '已禁用（目录移入 skills-disabled）', 'ok');
-      await loadSkills(); selectSkill(name, enable ? 'enabled' : 'disabled');
+      await api('/api/toggle', { source: state.active, name, enabled: enable });
+      toast(enable ? t('okEnabled') : t('okDisabled'), 'ok');
+      await loadSkills();
+      selectSkill(name, enable ? 'enabled' : 'disabled');
     } catch (e) { toast(e.message, 'err'); }
   };
   $('#aImplicit').onclick = async () => {
     try {
-      await api('/api/implicit', { source: state.source, name, allow: !s.allowImplicit });
-      toast(!s.allowImplicit ? '已允许自动调用' : '已改为仅手动调用', 'ok');
-      await loadSkills(); selectSkill(name, d.state);
+      await api('/api/implicit', { source: state.active, name, allow: !s.allowImplicit });
+      toast(!s.allowImplicit ? t('okAuto') : t('okManual'), 'ok');
+      await loadSkills();
+      selectSkill(name, d.state);
     } catch (e) { toast(e.message, 'err'); }
   };
   $('#aUpdate').onclick = async () => {
-    if (!confirm(`从 ${s.source.repo} 重新拉取并覆盖「${name}」？旧版本会先备份。`)) return;
-    try { const r = await api('/api/update', { source: state.source, name }); toast('已更新，备份：' + r.backup, 'ok'); await loadSkills(); selectSkill(name, 'enabled'); }
-    catch (e) { toast(e.message, 'err'); }
+    if (!confirm(t('confirmUpdate', { repo: s.source.repo, name }))) return;
+    try {
+      const r = await api('/api/update', { source: state.active, name });
+      toast(t('okUpdated', { path: r.backup }), 'ok');
+      await loadSkills();
+      selectSkill(name, 'enabled');
+    } catch (e) { toast(e.message, 'err'); }
   };
   $('#aUninstall').onclick = async () => {
-    if (!confirm(`卸载「${name}」？目录会移到备份区，可手动恢复。`)) return;
-    try { const r = await api('/api/uninstall', { source: state.source, name }); toast('已卸载，备份：' + r.backup, 'ok'); state.current = null; $('#detail').innerHTML = '<div class="empty">已卸载</div>'; await loadSkills(); }
-    catch (e) { toast(e.message, 'err'); }
+    if (!confirm(t('confirmUninstall', { name }))) return;
+    try {
+      const r = await api('/api/uninstall', { source: state.active, name });
+      toast(t('okUninstalled', { path: r.backup }), 'ok');
+      state.current = null;
+      $('#detail').innerHTML = `<div class="empty">${esc(t('uninstalled'))}</div>`;
+      await loadSkills();
+    } catch (e) { toast(e.message, 'err'); }
   };
 }
 
-function openModal(html) {
-  $('#modal').innerHTML = html;
-  $('#mask').dataset.open = 'true';
-}
+function openModal(html) { $('#modal').innerHTML = html; $('#mask').dataset.open = 'true'; }
 function closeModal() { $('#mask').dataset.open = 'false'; }
 $('#mask').onclick = (e) => { if (e.target.id === 'mask') closeModal(); };
 
 $('#btnInstall').onclick = () => {
   openModal(`
-    <h3>从 GitHub 安装</h3>
-    <p>仓库格式 owner/repo。若仓库含多个技能，先留空以获取列表。</p>
-    <div class="field"><label>Repository</label><input id="mRepo" placeholder="vercel-labs/skills" /></div>
-    <div class="field"><label>技能名（可选）</label><input id="mSkill" placeholder="find-skills" /></div>
-    <div class="row"><button class="btn" data-close>取消</button><button class="btn primary" id="mGo">安装</button></div>`);
+    <h3>${esc(t('installTitle'))}</h3>
+    <p>${esc(t('installDesc'))}</p>
+    <div class="field"><label>${esc(t('repo'))}</label><input id="mRepo" placeholder="vercel-labs/skills" /></div>
+    <div class="field"><label>${esc(t('skillOptional'))}</label><input id="mSkill" placeholder="find-skills" /></div>
+    <div class="row"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="mGo">${esc(t('install'))}</button></div>`);
   $('#modal').querySelector('[data-close]').onclick = closeModal;
   $('#mGo').onclick = async () => {
     const repo = $('#mRepo').value.trim();
     const skill = $('#mSkill').value.trim();
-    if (!repo) return toast('请填写仓库', 'err');
+    if (!repo) return toast(t('fillRepo'), 'err');
     try {
-      const r = await api('/api/install', { source: state.source, repo, skill });
+      const r = await api('/api/install', { source: state.active, repo, skill });
       if (r.needsSelection) {
         $('#mSkill').value = '';
-        toast('该仓库包含多个技能：' + r.skills.join(', ') + '，请填一个再装', '');
+        toast(t('needsSelection', { list: r.skills.join(', ') }), '');
         return;
       }
-      closeModal(); toast('已安装 ' + r.installed, 'ok'); await loadSkills();
+      closeModal();
+      toast(t('installed', { name: r.installed }), 'ok');
+      await loadSkills();
     } catch (e) { toast(e.message, 'err'); }
   };
 };
 
 $('#btnCreate').onclick = () => {
   openModal(`
-    <h3>新建技能</h3>
-    <p>会生成 SKILL.md 模板，写入当前来源目录。</p>
-    <div class="field"><label>名称</label><input id="cName" placeholder="my-skill" /></div>
-    <div class="field"><label>描述</label><input id="cDesc" placeholder="Use when ..." /></div>
-    <div class="row"><button class="btn" data-close>取消</button><button class="btn primary" id="cGo">创建</button></div>`);
+    <h3>${esc(t('createTitle'))}</h3>
+    <p>${esc(t('createDesc'))}</p>
+    <div class="field"><label>${esc(t('name'))}</label><input id="cName" placeholder="my-skill" /></div>
+    <div class="field"><label>${esc(t('desc'))}</label><input id="cDesc" placeholder="Use when ..." /></div>
+    <div class="row"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="cGo">${esc(t('create'))}</button></div>`);
   $('#modal').querySelector('[data-close]').onclick = closeModal;
   $('#cGo').onclick = async () => {
     const name = $('#cName').value.trim();
     const description = $('#cDesc').value.trim();
-    if (!name) return toast('请填写名称', 'err');
-    try { await api('/api/create', { source: state.source, name, description }); closeModal(); toast('已创建 ' + name, 'ok'); await loadSkills(); }
-    catch (e) { toast(e.message, 'err'); }
+    if (!name) return toast(t('fillName'), 'err');
+    try {
+      await api('/api/create', { source: state.active, name, description });
+      closeModal();
+      toast(t('okCreated', { name }), 'ok');
+      await loadSkills();
+    } catch (e) { toast(e.message, 'err'); }
   };
 };
 
-$('#q').oninput = (e) => { state.q = e.target.value.trim(); renderList(); };
+$('#btnSettings').onclick = () => {
+  const rows = state.sources.map((s) => {
+    const tab = { id: s.id, kind: s.kind, shared: false };
+    return `
+    <div class="field">
+      <label>${esc(labelFor(tab))}</label>
+      <input data-cfg="${esc(s.id)}" value="${esc(s.path)}" />
+      <div class="hint">${s.exists ? '' : '✕ '}${esc(s.path)}</div>
+    </div>`;
+  }).join('');
+  openModal(`
+    <h3>${esc(t('settingsTitle'))}</h3>
+    <p>${esc(t('settingsDesc'))}</p>
+    ${rows}
+    <div class="row"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="sGo">${esc(t('save'))}</button></div>`);
+  $('#modal').querySelector('[data-close]').onclick = closeModal;
+  $('#sGo').onclick = async () => {
+    const sources = [...$('#modal').querySelectorAll('[data-cfg]')].map((i) => ({ id: i.dataset.cfg, path: i.value.trim() }));
+    try {
+      await api('/api/config', { sources, lang });
+      closeModal();
+      toast(t('okSaved'), 'ok');
+      await loadSources();
+      await loadSkills();
+    } catch (e) { toast(e.message, 'err'); }
+  };
+};
+
+function applyStaticText() {
+  $('#btnInstall').textContent = t('install');
+  $('#btnCreate').textContent = t('create');
+  $('#btnSettings').textContent = t('settings');
+  $('#q').placeholder = t('search');
+  $('#btnLang').textContent = lang === 'zh-CN' ? 'EN' : '中文';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+}
+
+$('#btnLang').onclick = async () => {
+  lang = lang === 'zh-CN' ? 'en' : 'zh-CN';
+  localStorage.setItem('sm-lang', lang);
+  applyStaticText();
+  renderTabs();
+  renderList();
+  if (state.current) {
+    const s = state.skills.find((x) => x.name === state.current);
+    if (s) selectSkill(s.name, s.state);
+  } else {
+    $('#detail').innerHTML = `<div class="empty">${esc(t('emptySelect'))}</div>`;
+  }
+};
 
 (async () => {
   try {
-    const params = new URLSearchParams(location.search);
-    const src = params.get('source');
-    if (src && ['codex', 'workbuddy'].includes(src)) state.source = src;
+    applyStaticText();
     await loadSources();
     await loadSkills();
-    const sk = params.get('skill');
+    const sk = params0.get('skill');
     if (sk) {
       const found = state.skills.find((x) => x.name === sk);
       if (found) selectSkill(found.name, found.state);
