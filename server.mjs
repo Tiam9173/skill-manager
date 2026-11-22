@@ -153,6 +153,42 @@ async function readSkill(dir, state) {
   };
 }
 
+const PLUGIN_CACHE = path.join(HOME, '.codex', 'plugins', 'cache');
+const AGENTS_SKILLS = path.join(HOME, '.agents', 'skills');
+let pluginIndexCache = { at: 0, map: null };
+
+async function buildPluginIndex() {
+  if (pluginIndexCache.map && Date.now() - pluginIndexCache.at < 60000) return pluginIndexCache.map;
+  const map = new Map();
+  async function scan(dir, depth) {
+    if (depth > 6) return;
+    let entries;
+    try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      if (e.name === 'node_modules' || e.name === '.git') continue;
+      const full = path.join(dir, e.name);
+      if (path.basename(dir) === 'skills' && (await exists(path.join(full, 'SKILL.md')))) {
+        if (!map.has(e.name)) map.set(e.name, []);
+        map.get(e.name).push(full);
+      }
+      await scan(full, depth + 1);
+    }
+  }
+  await scan(PLUGIN_CACHE, 0);
+  await scan(AGENTS_SKILLS, 0);
+  pluginIndexCache = { at: Date.now(), map };
+  return map;
+}
+
+async function attachDuplicates(skills) {
+  const idx = await buildPluginIndex();
+  for (const s of skills) {
+    s.duplicates = (idx.get(s.name) || []).filter((p) => path.resolve(p) !== path.resolve(s.dir));
+  }
+  return skills;
+}
+
 async function listSkills(src) {
   const out = [];
   for (const [dir, state] of [[src.root, 'enabled'], [src.disabled, 'disabled']]) {
@@ -371,7 +407,9 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/skills') {
       const id = url.searchParams.get('source') || 'codex';
-      return send(res, 200, { skills: await listSkills(resolveSource(cfg, id)) });
+      const skills = await listSkills(resolveSource(cfg, id));
+      await attachDuplicates(skills);
+      return send(res, 200, { skills });
     }
 
     if (p === '/api/skill') {
@@ -379,7 +417,10 @@ const server = http.createServer(async (req, res) => {
       const name = url.searchParams.get('name') || '';
       const state = url.searchParams.get('state') === 'disabled' ? 'disabled' : 'enabled';
       assertName(name);
-      return send(res, 200, await readSkillDetail(resolveSource(cfg, id), name, state));
+      const detail = await readSkillDetail(resolveSource(cfg, id), name, state);
+      const idx = await buildPluginIndex();
+      detail.duplicates = (idx.get(name) || []).filter((x) => path.resolve(x) !== path.resolve(detail.dir));
+      return send(res, 200, detail);
     }
 
     if (req.method === 'POST') {

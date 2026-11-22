@@ -43,6 +43,8 @@ node server.mjs
 - **卸载**：移到 `~/.skill-manager/backups/<时间戳>/`
 - **新建**：生成 SKILL.md 模板
 - **来源设置**：自定义每个来源的技能目录
+- **重复检测**：扫描 `~/.codex/plugins/cache` 与 `~/.agents/skills`，标出同名副本（禁用一个可能仍被另一份加载）
+- **生效提示**：所有改动都会提示「需新开任务生效」
 
 ## 安全边界
 

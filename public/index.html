@@ -142,6 +142,8 @@ const I18N = {
     save: '保存', cancel: '取消',
     okSaved: '设置已保存',
     installed: '已安装 {name}',
+    dup: '重复', dupChip: '另有 {n} 份副本', needRestart: '（需新开任务生效）',
+    dupDisable: '已禁用，但插件副本仍在，可能还会被加载',
   },
   en: {
     search: 'Search name or description',
@@ -177,6 +179,8 @@ const I18N = {
     save: 'Save', cancel: 'Cancel',
     okSaved: 'Settings saved',
     installed: 'Installed {name}',
+    dup: 'Dup', dupChip: '{n} other copy', needRestart: ' (takes effect in a new task)',
+    dupDisable: 'Disabled, but a plugin copy still exists and may still load',
   },
 };
 
@@ -272,6 +276,7 @@ function renderList() {
       <div class="name">${esc(s.name)}
         ${s.state === 'disabled' ? `<span class="pill dis">${esc(t('disabled'))}</span>` : ''}
         ${s.state === 'enabled' && !s.allowImplicit ? `<span class="pill off">${esc(t('manual'))}</span>` : ''}
+        ${s.duplicates && s.duplicates.length ? `<span class="pill off" title="${esc(s.duplicates.join('\n'))}">${esc(t('dup'))}</span>` : ''}
       </div>
       <div class="desc">${esc(s.description || t('noDesc'))}</div>
       <div class="meta"><span>${esc(filesLabel(s.fileCount))}</span><span>${fmt(s.bytes)}</span>${s.source ? '<span>git</span>' : ''}</div>
@@ -295,6 +300,7 @@ async function selectSkill(name, st) {
       <span class="chip">${esc(filesLabel(s.fileCount || 0))}</span>
       <span class="chip">${fmt(s.bytes || 0)}</span>
       <span class="chip ${s.allowImplicit ? 'warn' : 'ok'}">${esc(implicitLabel)}</span>
+      ${d.duplicates && d.duplicates.length ? `<span class="chip warn" title="${esc(d.duplicates.join('\n'))}">${esc(t('dupChip', { n: d.duplicates.length }))}</span>` : ''}
       ${s.source ? `<span class="chip">${esc(s.source.repo)}</span>` : ''}
     </div>
     <div class="actions">
@@ -312,7 +318,8 @@ async function selectSkill(name, st) {
     const enable = d.state !== 'enabled';
     try {
       await api('/api/toggle', { source: state.active, name, enabled: enable });
-      toast(enable ? t('okEnabled') : t('okDisabled'), 'ok');
+      if (!enable && d.duplicates && d.duplicates.length) toast(t('dupDisable'), 'err');
+      else toast((enable ? t('okEnabled') : t('okDisabled')) + t('needRestart'), 'ok');
       await loadSkills();
       selectSkill(name, enable ? 'enabled' : 'disabled');
     } catch (e) { toast(e.message, 'err'); }
@@ -320,7 +327,7 @@ async function selectSkill(name, st) {
   $('#aImplicit').onclick = async () => {
     try {
       await api('/api/implicit', { source: state.active, name, allow: !s.allowImplicit });
-      toast(!s.allowImplicit ? t('okAuto') : t('okManual'), 'ok');
+      toast((!s.allowImplicit ? t('okAuto') : t('okManual')) + t('needRestart'), 'ok');
       await loadSkills();
       selectSkill(name, d.state);
     } catch (e) { toast(e.message, 'err'); }
@@ -329,7 +336,7 @@ async function selectSkill(name, st) {
     if (!confirm(t('confirmUpdate', { repo: s.source.repo, name }))) return;
     try {
       const r = await api('/api/update', { source: state.active, name });
-      toast(t('okUpdated', { path: r.backup }), 'ok');
+      toast(t('okUpdated', { path: r.backup }) + t('needRestart'), 'ok');
       await loadSkills();
       selectSkill(name, 'enabled');
     } catch (e) { toast(e.message, 'err'); }
@@ -338,7 +345,7 @@ async function selectSkill(name, st) {
     if (!confirm(t('confirmUninstall', { name }))) return;
     try {
       const r = await api('/api/uninstall', { source: state.active, name });
-      toast(t('okUninstalled', { path: r.backup }), 'ok');
+      toast(t('okUninstalled', { path: r.backup }) + t('needRestart'), 'ok');
       state.current = null;
       $('#detail').innerHTML = `<div class="empty">${esc(t('uninstalled'))}</div>`;
       await loadSkills();
@@ -370,7 +377,7 @@ $('#btnInstall').onclick = () => {
         return;
       }
       closeModal();
-      toast(t('installed', { name: r.installed }), 'ok');
+      toast(t('installed', { name: r.installed }) + t('needRestart'), 'ok');
       await loadSkills();
     } catch (e) { toast(e.message, 'err'); }
   };
@@ -391,7 +398,7 @@ $('#btnCreate').onclick = () => {
     try {
       await api('/api/create', { source: state.active, name, description });
       closeModal();
-      toast(t('okCreated', { name }), 'ok');
+      toast(t('okCreated', { name }) + t('needRestart'), 'ok');
       await loadSkills();
     } catch (e) { toast(e.message, 'err'); }
   };
