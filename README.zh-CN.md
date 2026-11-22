@@ -45,6 +45,7 @@ node server.mjs
 - **来源设置**：自定义每个来源的技能目录
 - **重复检测**：扫描 `~/.codex/plugins/cache` 与 `~/.agents/skills`，标出同名副本（禁用一个可能仍被另一份加载）
 - **生效提示**：所有改动都会提示「需新开任务生效」
+- **配置编辑**：可视化编辑 `~/.codex/config.toml` 与 WorkBuddy 的 `app-config.json` / `settings.json`，每次保存前自动备份。账号级字段（model、provider、service_tier、推理强度）可编辑，但带风险提示并在保存前二次确认；密钥类字段保持只读。
 
 ## 安全边界
 

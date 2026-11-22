@@ -45,6 +45,7 @@ Chinese and English UI, switchable from the top-right corner. The choice is stor
 - **Source settings** — custom skill directory per source
 - **Duplicate detection** — flags skills that also exist under `~/.codex/plugins/cache` or `~/.agents/skills`, since disabling one copy may not remove it from the host
 - **Effective-state hints** — every mutation tells you it needs a new task to take effect
+- **Config editor** — visual editor for `~/.codex/config.toml` and WorkBuddy's `app-config.json` / `settings.json`; every save is backed up first. Account-level fields (model, provider, service tier, reasoning effort) are editable with an inline warning and a second confirmation; secret fields stay read-only.
 
 ## Safety
 
