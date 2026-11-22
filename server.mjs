@@ -166,7 +166,7 @@ async function buildPluginIndex() {
     try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
       if (!e.isDirectory()) continue;
-      if (e.name === 'node_modules' || e.name === '.git') continue;
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
       const full = path.join(dir, e.name);
       if (path.basename(dir) === 'skills' && (await exists(path.join(full, 'SKILL.md')))) {
         if (!map.has(e.name)) map.set(e.name, []);
