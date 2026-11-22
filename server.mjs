@@ -362,6 +362,156 @@ async function readSkillDetail(src, name, state) {
   };
 }
 
+const CODEX_CONFIG = path.join(HOME, '.codex', 'config.toml');
+const WB_SETTINGS = path.join(HOME, '.workbuddy-ai', 'settings.json');
+const WB_APP_CONFIG = path.join(HOME, '.workbuddy-ai', 'app', 'app-config.json');
+
+const ACCOUNT_KEYS = new Set([
+  'model', 'model_provider', 'service_tier', 'model_reasoning_effort',
+  'disable_response_storage', 'notify', 'review_model',
+]);
+
+function parseToml(text) {
+  const lines = text.split(/\r?\n/);
+  const items = [];
+  let section = '';
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const sm = trimmed.match(/^\[\[?([^\]]+)\]\]?$/);
+    if (sm) { section = sm[1].trim(); continue; }
+    const km = trimmed.match(/^([A-Za-z0-9_.\-"']+)\s*=\s*(.+)$/);
+    if (!km) continue;
+    const rawVal = km[2].trim();
+    let type = 'raw';
+    let value = rawVal;
+    if (rawVal === 'true' || rawVal === 'false') { type = 'bool'; value = rawVal === 'true'; }
+    else if (/^-?\d+(\.\d+)?$/.test(rawVal)) { type = 'number'; value = Number(rawVal); }
+    else if (/^"(?:[^"\\]|\\.)*"$/.test(rawVal)) { type = 'string'; value = JSON.parse(rawVal); }
+    else if (/^'[^']*'$/.test(rawVal)) { type = 'string'; value = rawVal.slice(1, -1); }
+    else if (rawVal.startsWith('[')) { type = 'array'; value = rawVal; }
+    items.push({ section, key: km[1], rawVal, type, value, line: i });
+  }
+  return { lines, items };
+}
+
+function serializeToml(type, value) {
+  if (type === 'bool') return value ? 'true' : 'false';
+  if (type === 'number') return String(Number(value));
+  if (type === 'string') return JSON.stringify(String(value));
+  return String(value);
+}
+
+function codexGroup(section, key) {
+  if (!section) return ACCOUNT_KEYS.has(key) ? 'account' : 'runtime';
+  if (section.startsWith('model_providers')) return 'account';
+  if (section.startsWith('desktop') || section.startsWith('windows')) return 'ui';
+  if (section.startsWith('mcp_servers')) return 'mcp';
+  if (section.startsWith('projects')) return 'projects';
+  if (section.startsWith('plugins') || section.startsWith('marketplaces')) return 'plugins';
+  if (section.startsWith('hooks')) return 'hooks';
+  return 'other';
+}
+
+function isEditableCodex(section, key) {
+  const g = codexGroup(section, key);
+  if (g === 'mcp' || g === 'plugins' || g === 'hooks' || g === 'other') return false;
+  if (g === 'projects') return key === 'trust_level';
+  if (g === 'runtime') return ['web_search', 'sandbox_mode', 'approval_policy'].includes(key);
+  if (g === 'account') return !/token|key|secret|password/i.test(key);
+  return g === 'ui';
+}
+
+async function backupFile(p, label) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dest = path.join(BACKUPS, stamp, label, path.basename(p));
+  await ensureDir(path.dirname(dest));
+  await fsp.cp(p, dest);
+  return dest;
+}
+
+async function readCodexConfig() {
+  if (!(await exists(CODEX_CONFIG))) return { exists: false, groups: [] };
+  const text = await fsp.readFile(CODEX_CONFIG, 'utf8');
+  const { items } = parseToml(text);
+  const groups = {};
+  for (const it of items) {
+    const g = codexGroup(it.section, it.key);
+    if (!groups[g]) groups[g] = [];
+    const isSecret = /token|key|secret|password/i.test(it.key) && it.type === 'string';
+    groups[g].push({
+      group: g,
+      section: it.section,
+      key: it.key,
+      label: it.section ? `${it.section}.${it.key}` : it.key,
+      type: it.type,
+      value: isSecret ? '••••••' : it.value,
+      raw: isSecret ? '' : it.rawVal,
+      editable: isEditableCodex(it.section, it.key) && !isSecret,
+      secret: isSecret,
+    });
+  }
+  return { exists: true, path: CODEX_CONFIG, groups };
+}
+
+async function updateCodexConfig(updates) {
+  if (!Array.isArray(updates) || !updates.length) throw new Error('没有要保存的字段');
+  const text = await fsp.readFile(CODEX_CONFIG, 'utf8');
+  const { lines, items } = parseToml(text);
+  const backup = await backupFile(CODEX_CONFIG, 'codex-config');
+  for (const u of updates) {
+    const it = items.find((x) => x.section === u.section && x.key === u.key);
+    if (!it) throw new Error(`字段不存在：${u.section}.${u.key}`);
+    if (!isEditableCodex(it.section, it.key)) throw new Error(`该字段只读：${u.section}.${u.key}`);
+    lines[it.line] = `${it.key} = ${serializeToml(it.type, u.value)}`;
+  }
+  await fsp.writeFile(CODEX_CONFIG, lines.join('\n'), 'utf8');
+  return { ok: true, backup };
+}
+
+async function readWorkbuddyConfig() {
+  const out = { app: null, appPath: WB_APP_CONFIG, settingsPath: WB_SETTINGS, extraAllowWrite: [], ruleGroups: [] };
+  if (await exists(WB_APP_CONFIG)) {
+    try { out.app = JSON.parse(await fsp.readFile(WB_APP_CONFIG, 'utf8')); } catch { out.app = null; }
+  }
+  if (await exists(WB_SETTINGS)) {
+    try {
+      const st = JSON.parse(await fsp.readFile(WB_SETTINGS, 'utf8'));
+      out.extraAllowWrite = st?.sandbox?.extraAllowWrite || [];
+      const rules = st?.sandbox?.orderedRules || {};
+      out.ruleGroups = Object.entries(rules).map(([k, v]) => ({
+        kind: k,
+        presetVersion: v?.presetVersion ?? null,
+        customized: !!v?.customized,
+        count: Array.isArray(v?.rules) ? v.rules.length : 0,
+      }));
+    } catch {}
+  }
+  return out;
+}
+
+async function updateWorkbuddyConfig(patch) {
+  const result = {};
+  if (patch.app && typeof patch.app === 'object') {
+    const cur = JSON.parse(await fsp.readFile(WB_APP_CONFIG, 'utf8'));
+    const next = { ...cur };
+    if (typeof patch.app.locale === 'string' && ['zh-CN', 'en', 'en-US'].includes(patch.app.locale)) next.locale = patch.app.locale;
+    if (typeof patch.app.defaultWorkspacePath === 'string' && patch.app.defaultWorkspacePath.trim()) next.defaultWorkspacePath = patch.app.defaultWorkspacePath.trim();
+    if (typeof patch.app.sandboxSafetyEnabled === 'boolean') next.sandboxSafetyEnabled = patch.app.sandboxSafetyEnabled;
+    result.appBackup = await backupFile(WB_APP_CONFIG, 'workbuddy-config');
+    await fsp.writeFile(WB_APP_CONFIG, JSON.stringify(next, null, 2), 'utf8');
+  }
+  if (Array.isArray(patch.extraAllowWrite)) {
+    const cur = JSON.parse(await fsp.readFile(WB_SETTINGS, 'utf8'));
+    cur.sandbox = cur.sandbox || {};
+    cur.sandbox.extraAllowWrite = patch.extraAllowWrite.map((s) => String(s).trim()).filter(Boolean);
+    result.settingsBackup = await backupFile(WB_SETTINGS, 'workbuddy-config');
+    await fsp.writeFile(WB_SETTINGS, JSON.stringify(cur, null, 2), 'utf8');
+  }
+  return { ok: true, ...result };
+}
+
 function send(res, code, data, type = 'application/json; charset=utf-8') {
   const body = type.startsWith('application/json') ? JSON.stringify(data) : data;
   res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' });
@@ -405,6 +555,14 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, cfg);
     }
 
+    if (p === '/api/config/codex' && req.method === 'GET') {
+      return send(res, 200, await readCodexConfig());
+    }
+
+    if (p === '/api/config/workbuddy' && req.method === 'GET') {
+      return send(res, 200, await readWorkbuddyConfig());
+    }
+
     if (p === '/api/skills') {
       const id = url.searchParams.get('source') || 'codex';
       const skills = await listSkills(resolveSource(cfg, id));
@@ -441,6 +599,14 @@ const server = http.createServer(async (req, res) => {
         if (typeof body.lang === 'string' && ['zh-CN', 'en'].includes(body.lang)) next.lang = body.lang;
         await saveConfig(next);
         return send(res, 200, { ok: true, config: next });
+      }
+
+      if (p === '/api/config/codex') {
+        return send(res, 200, await updateCodexConfig(body.updates));
+      }
+
+      if (p === '/api/config/workbuddy') {
+        return send(res, 200, await updateWorkbuddyConfig(body));
       }
 
       if (p === '/api/toggle') {

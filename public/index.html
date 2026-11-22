@@ -84,6 +84,21 @@
   .toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.err{border-color:#5a2020;color:#ffb4b4}
   .toast.ok{border-color:#1e4d44;color:#9df3e2}
+  .modal.wide{width:min(940px,94vw)}
+  .cfg-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r6);padding:2px;margin-bottom:16px}
+  .cfg-tab{padding:5px 12px;border-radius:4px;font-size:12.5px;color:var(--body)}
+  .cfg-tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+  .cfg-group{margin-bottom:18px}
+  .cfg-group h4{margin:0 0 8px;font:11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:400}
+  .cfg-row{display:grid;grid-template-columns:1fr 250px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a}
+  .cfg-row:last-child{border-bottom:0}
+  .cfg-key{font:12px/1.5 var(--mono);color:#9a9a9a;word-break:break-all}
+  .cfg-key .ro{color:var(--mute);font-size:10.5px;margin-left:6px}
+  .cfg-row input[type=text],.cfg-row select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--r6);padding:6px 8px;color:var(--ink);font-size:12.5px;outline:none}
+  .cfg-val{font:12px/1.5 var(--mono);color:var(--body);text-align:right;word-break:break-all}
+  textarea.cfg-area{width:100%;min-height:110px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r6);padding:8px;color:var(--ink);font:12px/1.6 var(--mono);outline:none;resize:vertical}
+  .cfg-note{font:11.5px/1.6 var(--mono);color:#5c5c5c;margin:10px 0 0}
+  .cfg-warn{background:#1a1408;border:1px solid #4a3a17;color:#e0b96a;border-radius:var(--r6);padding:8px 10px;font-size:12px;line-height:1.6;margin-bottom:10px}
   @media (max-width:900px){.wrap{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line);max-height:38vh}}
 </style>
 </head>
@@ -94,6 +109,7 @@
   <div class="search"><input id="q" autocomplete="off" /></div>
   <button class="btn icon" id="btnLang" title="Language">EN</button>
   <button class="btn" id="btnSettings"></button>
+  <button class="btn" id="btnConfig"></button>
   <button class="btn" id="btnInstall"></button>
   <button class="btn primary" id="btnCreate"></button>
 </div>
@@ -143,6 +159,16 @@ const I18N = {
     okSaved: '设置已保存',
     installed: '已安装 {name}',
     dup: '重复', dupChip: '另有 {n} 份副本', needRestart: '（需新开任务生效）',
+    config: '配置', cfgDesc: '直接读写配置文件，保存前自动备份。账号级字段只读。',
+    cfgCodex: 'Codex config.toml', cfgWorkbuddy: 'WorkBuddy 设置',
+    cfgAccount: '账号与模型（谨慎修改）', cfgRuntime: '运行行为', cfgUi: '界面', cfgMcp: 'MCP 服务器（只读）',
+    cfgProjects: '项目信任', cfgPlugins: '插件与市场（只读）', cfgHooks: 'Hooks（只读）', cfgOther: '其他（只读）',
+    cfgReadonly: '只读', cfgNoChange: '没有改动', cfgSaved: '已保存，备份：{path}',
+    cfgNote: '账号级字段可编辑，但改动会影响 Codex 的登录与请求。保存前会二次确认。',
+    cfgAccountWarn: '账号级字段：改错可能导致 Codex 无法启动、请求失败或账号异常。密钥类字段保持只读。',
+    cfgConfirmAccount: '将修改 {n} 个账号级字段（{list}）。确定保存？',
+    cfgAllowWrite: '额外允许写入的路径（每行一个）', cfgRules: '文件规则（只读）',
+    cfgWbNote: 'WorkBuddy 运行中可能覆写设置，改完建议重启应用。', cfgMissing: '配置文件不存在',
     dupDisable: '已禁用，但插件副本仍在，可能还会被加载',
   },
   en: {
@@ -180,6 +206,16 @@ const I18N = {
     okSaved: 'Settings saved',
     installed: 'Installed {name}',
     dup: 'Dup', dupChip: '{n} other copy', needRestart: ' (takes effect in a new task)',
+    config: 'Config', cfgDesc: 'Reads and writes config files directly, with a backup before saving. Account-level fields are read-only.',
+    cfgCodex: 'Codex config.toml', cfgWorkbuddy: 'WorkBuddy settings',
+    cfgAccount: 'Account & model (edit with care)', cfgRuntime: 'Runtime', cfgUi: 'Interface', cfgMcp: 'MCP servers (read-only)',
+    cfgProjects: 'Project trust', cfgPlugins: 'Plugins & marketplaces (read-only)', cfgHooks: 'Hooks (read-only)', cfgOther: 'Other (read-only)',
+    cfgReadonly: 'read-only', cfgNoChange: 'No changes', cfgSaved: 'Saved, backup: {path}',
+    cfgNote: 'Account-level fields are editable, but they affect Codex sign-in and requests. You will be asked to confirm before saving.',
+    cfgAccountWarn: 'Account-level fields: a wrong value can break Codex startup, requests, or the account. Secret fields stay read-only.',
+    cfgConfirmAccount: 'This will change {n} account-level field(s) ({list}). Save anyway?',
+    cfgAllowWrite: 'Extra writable paths (one per line)', cfgRules: 'File rules (read-only)',
+    cfgWbNote: 'WorkBuddy may rewrite settings while running; restart the app after changes.', cfgMissing: 'Config file not found',
     dupDisable: 'Disabled, but a plugin copy still exists and may still load',
   },
 };
@@ -354,7 +390,7 @@ async function selectSkill(name, st) {
 }
 
 function openModal(html) { $('#modal').innerHTML = html; $('#mask').dataset.open = 'true'; }
-function closeModal() { $('#mask').dataset.open = 'false'; }
+function closeModal() { $('#mask').dataset.open = 'false'; $('#modal').classList.remove('wide'); }
 $('#mask').onclick = (e) => { if (e.target.id === 'mask') closeModal(); };
 
 $('#btnInstall').onclick = () => {
@@ -436,11 +472,118 @@ function applyStaticText() {
   $('#btnInstall').textContent = t('install');
   $('#btnCreate').textContent = t('create');
   $('#btnSettings').textContent = t('settings');
+  $('#btnConfig').textContent = t('config');
   $('#q').placeholder = t('search');
   $('#btnLang').textContent = lang === 'zh-CN' ? 'EN' : '中文';
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
 }
+
+let cfgState = { codex: null, wb: null, tab: 'codex', fieldMap: new Map() };
+const CFG_GROUPS = ['account','runtime','ui','projects','mcp','plugins','hooks','other'];
+const CFG_LABEL = { account:'cfgAccount', runtime:'cfgRuntime', ui:'cfgUi', mcp:'cfgMcp', projects:'cfgProjects', plugins:'cfgPlugins', hooks:'cfgHooks', other:'cfgOther' };
+
+async function openConfigModal() {
+  openModal('<h3>' + esc(t('config')) + '</h3><p>' + esc(t('cfgDesc')) + '</p><div id="cfgBody"></div>');
+  $('#modal').classList.add('wide');
+  $('#cfgBody').innerHTML = '<div class="empty" style="height:auto;padding:20px">...</div>';
+  try {
+    const [codex, wb] = await Promise.all([api('/api/config/codex'), api('/api/config/workbuddy')]);
+    cfgState = { codex: codex, wb: wb, tab: 'codex', fieldMap: new Map() };
+    renderConfig();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderConfig() {
+  const tabs = '<div class="cfg-tabs">'
+    + '<button class="cfg-tab" data-tab="codex" aria-selected="' + (cfgState.tab === 'codex') + '">' + esc(t('cfgCodex')) + '</button>'
+    + '<button class="cfg-tab" data-tab="workbuddy" aria-selected="' + (cfgState.tab === 'workbuddy') + '">' + esc(t('cfgWorkbuddy')) + '</button>'
+    + '</div>';
+  const body = cfgState.tab === 'codex' ? renderCodexCfg() : renderWbCfg();
+  $('#cfgBody').innerHTML = tabs + body + '<div class="row"><button class="btn" data-close>' + esc(t('cancel')) + '</button><button class="btn primary" id="cfgSave">' + esc(t('save')) + '</button></div>';
+  $('#cfgBody').querySelectorAll('.cfg-tab').forEach(function (b) { b.onclick = function () { cfgState.tab = b.dataset.tab; renderConfig(); }; });
+  $('#cfgBody').querySelector('[data-close]').onclick = closeModal;
+  $('#cfgSave').onclick = saveConfig;
+}
+
+function renderCodexCfg() {
+  if (!cfgState.codex || !cfgState.codex.exists) return '<div class="empty" style="height:auto;padding:20px">' + esc(t('cfgMissing')) + '</div>';
+  cfgState.fieldMap = new Map();
+  return CFG_GROUPS.filter(function (g) { return (cfgState.codex.groups[g] || []).length; }).map(function (g) {
+    const rows = cfgState.codex.groups[g].map(function (f) {
+      const id = g + '::' + f.section + '::' + f.key;
+      cfgState.fieldMap.set(id, f);
+      let ctrl;
+      if (!f.editable) {
+        const shown = f.secret ? '\u2022\u2022\u2022\u2022\u2022\u2022' : (f.type === 'array' ? f.raw : String(f.value));
+        ctrl = '<div class="cfg-val">' + esc(shown) + '</div>';
+      } else if (f.type === 'bool') {
+        ctrl = '<select data-id="' + esc(id) + '"><option value="true"' + (f.value === true ? ' selected' : '') + '>true</option><option value="false"' + (f.value === false ? ' selected' : '') + '>false</option></select>';
+      } else {
+        ctrl = '<input type="text" data-id="' + esc(id) + '" value="' + esc(String(f.value)) + '" />';
+      }
+      return '<div class="cfg-row"><div class="cfg-key">' + esc(f.label) + (f.editable ? '' : '<span class="ro">' + esc(t('cfgReadonly')) + '</span>') + '</div>' + ctrl + '</div>';
+    }).join('');
+    return '<div class="cfg-group"><h4>' + esc(t(CFG_LABEL[g])) + '</h4>' + (g === 'account' ? '<div class="cfg-warn">' + esc(t('cfgAccountWarn')) + '</div>' : '') + rows + '</div>';
+  }).join('') + '<p class="cfg-note">' + esc(t('cfgNote')) + '</p>';
+}
+
+function renderWbCfg() {
+  const wb = cfgState.wb || {};
+  const app = wb.app || {};
+  const loc = app.locale || 'zh-CN';
+  const allow = (wb.extraAllowWrite || []).join(String.fromCharCode(10));
+  const rules = (wb.ruleGroups || []).map(function (r) {
+    return '<div class="cfg-row"><div class="cfg-key">' + esc(r.kind) + '</div><div class="cfg-val">' + r.count + ' rules' + (r.customized ? ' \u00b7 customized' : '') + '</div></div>';
+  }).join('') || '<div class="cfg-val">\u2014</div>';
+  return '<div class="cfg-group"><h4>app-config.json</h4>'
+    + '<div class="cfg-row"><div class="cfg-key">locale</div><select data-wb="locale"><option value="zh-CN"' + (loc === 'zh-CN' ? ' selected' : '') + '>zh-CN</option><option value="en"' + (loc === 'en' ? ' selected' : '') + '>en</option></select></div>'
+    + '<div class="cfg-row"><div class="cfg-key">defaultWorkspacePath</div><input type="text" data-wb="workspace" value="' + esc(app.defaultWorkspacePath || '') + '" /></div>'
+    + '<div class="cfg-row"><div class="cfg-key">sandboxSafetyEnabled</div><select data-wb="sandbox"><option value="true"' + (app.sandboxSafetyEnabled ? ' selected' : '') + '>true</option><option value="false"' + (!app.sandboxSafetyEnabled ? ' selected' : '') + '>false</option></select></div>'
+    + '</div>'
+    + '<div class="cfg-group"><h4>' + esc(t('cfgAllowWrite')) + '</h4><textarea class="cfg-area" id="wbAllow">' + esc(allow) + '</textarea></div>'
+    + '<div class="cfg-group"><h4>' + esc(t('cfgRules')) + '</h4>' + rules + '</div>'
+    + '<p class="cfg-note">' + esc(t('cfgWbNote')) + '</p>';
+}
+
+async function saveConfig() {
+  try {
+    if (cfgState.tab === 'codex') {
+      const updates = [];
+      $('#cfgBody').querySelectorAll('[data-id]').forEach(function (el) {
+        const f = cfgState.fieldMap.get(el.dataset.id);
+        if (!f || !f.editable) return;
+        let v = el.value;
+        if (f.type === 'bool') v = v === 'true';
+        else if (f.type === 'number') v = Number(v);
+        if (v !== f.value) updates.push({ section: f.section, key: f.key, value: v });
+      });
+      if (!updates.length) return toast(t('cfgNoChange'), '');
+      const riskyKeys = [];
+      updates.forEach(function (u) {
+        cfgState.fieldMap.forEach(function (f) {
+          if (f.section === u.section && f.key === u.key && f.group === 'account') riskyKeys.push(u.key);
+        });
+      });
+      if (riskyKeys.length) {
+        const ok = confirm(t('cfgConfirmAccount', { n: riskyKeys.length, list: riskyKeys.join(', ') }));
+        if (!ok) return;
+      }
+      const r = await api('/api/config/codex', { updates: updates });
+      toast(t('cfgSaved', { path: r.backup }), 'ok');
+    } else {
+      const locale = $('#cfgBody').querySelector('[data-wb="locale"]').value;
+      const workspace = $('#cfgBody').querySelector('[data-wb="workspace"]').value.trim();
+      const sandbox = $('#cfgBody').querySelector('[data-wb="sandbox"]').value === 'true';
+      const allow = $('#wbAllow').value.split(String.fromCharCode(10)).map(function (x) { return x.trim(); }).filter(Boolean);
+      const r = await api('/api/config/workbuddy', { app: { locale: locale, defaultWorkspacePath: workspace, sandboxSafetyEnabled: sandbox }, extraAllowWrite: allow });
+      toast(t('cfgSaved', { path: r.appBackup || r.settingsBackup || '' }), 'ok');
+    }
+    closeModal();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+$('#btnConfig').onclick = openConfigModal;
 
 $('#btnLang').onclick = async () => {
   lang = lang === 'zh-CN' ? 'en' : 'zh-CN';
@@ -465,6 +608,10 @@ $('#btnLang').onclick = async () => {
     if (sk) {
       const found = state.skills.find((x) => x.name === sk);
       if (found) selectSkill(found.name, found.state);
+    }
+    if (params0.get('config')) {
+      await openConfigModal();
+      if (params0.get('config') === 'workbuddy') { cfgState.tab = 'workbuddy'; renderConfig(); }
     }
   } catch (e) { toast(e.message, 'err'); }
 })();
